@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Life Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Amsterdam Finance Simulator</p>
+          <h1>Life Blocks</h1>
+          <p class="lede">
+            Configure a single-person life scenario, run a deterministic month-by-month simulation,
+            and verify every yearly total through source blocks, formulas, and monthly ledger detail.
+            Taxes are modeled with flat effective rates and embedded directly into Income, Housing, and Growth.
+          </p>
+        </div>
+      </header>
+
+      <div class="top-toolbar">
+        <div class="header-actions">
+          <button id="reset-scenario" class="ghost-button" type="button">Reset</button>
+        </div>
+      </div>
+
+      <main class="layout-grid">
+        <section class="results-panel">
+          <section class="panel-card summary-card">
+            <div class="section-heading">
+              <h2>Snapshot</h2>
+              <p>Current end-state of the selected scenario.</p>
+            </div>
+            <div class="summary-sections">
+              <section class="summary-section">
+                <div class="summary-section-heading">
+                  <h3>End Position</h3>
+                  <p>Balances after the last simulated year.</p>
+                </div>
+                <div id="summary-balance-grid" class="summary-grid"></div>
+              </section>
+              <section class="summary-section">
+                <div class="summary-section-heading">
+                  <h3>Final Year Flow</h3>
+                  <p>Income and outflows for the last simulated year.</p>
+                </div>
+                <div id="summary-flow-grid" class="summary-grid flow-grid"></div>
+              </section>
+            </div>
+            <div id="warning-summary" class="warning-summary"></div>
+          </section>
+
+          <section class="panel-card ledger-card">
+            <div class="section-heading">
+              <h2>Ledger</h2>
+              <p>Yearly totals first, with expandable monthly rows and formula drilldown.</p>
+            </div>
+            <div id="ledger-root" class="ledger-root"></div>
+          </section>
+
+          <section class="panel-card charts-card">
+            <div class="section-heading">
+              <h2>Trajectory</h2>
+              <p>Ending balances by simulation year.</p>
+            </div>
+            <div id="chart-area" class="chart-area"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div id="side-actions" class="side-actions">
+      <button
+        id="open-config"
+        class="config-tab-button"
+        type="button"
+        aria-controls="config-drawer"
+        aria-expanded="false"
+      >
+        Configure blocks
+      </button>
+      <button
+        id="toggle-housing-mode"
+        class="side-toggle-button"
+        type="button"
+      >
+        Use mortgage
+      </button>
+      <button
+        id="toggle-current-money"
+        class="side-toggle-button"
+        type="button"
+        aria-pressed="false"
+      >
+        Use current money power
+      </button>
+    </div>
+
+    <div id="config-backdrop" class="config-backdrop" hidden></div>
+    <aside id="config-drawer" class="config-panel panel-card" aria-hidden="true">
+      <div class="config-panel-header">
+        <div>
+          <p class="eyebrow">Scenario setup</p>
+          <h2>Block Settings</h2>
+          <p class="detail-subhead">Open a block to edit it, then enable or disable it from that same card.</p>
+        </div>
+        <button id="close-config" class="ghost-button close-detail-button" type="button">Close</button>
+      </div>
+
+      <section class="config-note">
+        <h3>How it works</h3>
+        <ul class="plain-list">
+          <li>Income and recurring payments happen on the 1st day of each month.</li>
+          <li>The model holds no separate cash. Monthly surpluses add to investments and monthly deficits withdraw from investments.</li>
+          <li>Investment growth is applied on the last day of the month to the opening invested balance only.</li>
+          <li>Yearly results are shown by default. Expand any year to inspect monthly details.</li>
+        </ul>
+      </section>
+
+      <div id="block-config-root" class="block-config-list"></div>
+    </aside>
+
+    <div id="detail-backdrop" class="detail-backdrop" hidden></div>
+    <aside id="detail-drawer" class="detail-panel panel-card" aria-hidden="true">
+      <div class="detail-panel-header">
+        <div>
+          <p class="eyebrow">Inspector</p>
+          <h2>Calculation Detail</h2>
+          <p class="detail-subhead">Click any summary or ledger metric to inspect gross amounts, embedded taxes, formulas, and rollup steps.</p>
+        </div>
+        <button id="close-detail" class="ghost-button close-detail-button" type="button">Close</button>
+      </div>
+      <div id="detail-root" class="detail-root"></div>
+    </aside>
+
+    <template id="metric-card-template">
+      <article class="metric-card">
+        <span class="metric-label"></span>
+        <strong class="metric-value"></strong>
+      </article>
+    </template>
+
+    <script src="sim-core.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

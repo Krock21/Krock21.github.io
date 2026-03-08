@@ -1,0 +1,9 @@
+{
+  "name": "life-simulator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static local life simulation app for Amsterdam financial planning.",
+  "scripts": {
+    "test": "node --test sim-core.test.js"
+  }
+}
