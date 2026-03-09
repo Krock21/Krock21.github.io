@@ -19,6 +19,19 @@ test('employment-only scenario grows investments and keeps positive net worth', 
   assert.equal(result.warnings.some((warning) => warning.code === 'incompatibleBlocks'), false);
 });
 
+test('default scenario uses long-run baseline assumptions', () => {
+  const defaults = LifeSim.defaultScenario();
+
+  assert.equal(defaults.life.annualInflation, 2.5);
+  assert.equal(defaults.employment.annualTotalCompensation, 150000);
+  assert.equal(defaults.rent.monthlyRent, 1750);
+  assert.equal(defaults.mortgage.homeValue, 692000);
+  assert.equal(defaults.mortgage.outstandingPrincipal, 692000);
+  assert.equal(defaults.mortgage.annualHomeValueGrowth, 2.5);
+  assert.equal(defaults.investing.startingBalance, 20000);
+  assert.equal(defaults.investing.taxUnrealizedGains, false);
+});
+
 test('rent and mortgage enabled together emit incompatibility warning', () => {
   const scenario = LifeSim.withDefaults({
     life: { simulationYears: 1, annualInflation: 2 },
@@ -112,6 +125,8 @@ test('mortgage defaults follow the simplified home-value model', () => {
   assert.equal(scenario.mortgage.annualMaintenanceRatePercent, 1);
   assert.equal(scenario.mortgage.annualHomeValueGrowth, 5);
   assert.equal(scenario.mortgage.annualOwnerTaxesRatePercent, 0.1);
+  assert.equal(scenario.mortgage.purchaseCostsRatePercent, 3);
+  assert.equal(scenario.mortgage.saleCostsRatePercent, 1.5);
 });
 
 test('mortgage home value defaults from employment income when not set', () => {
@@ -138,16 +153,55 @@ test('mortgage preview exposes gross payment, first-month tax return, and first-
       annualMaintenanceRatePercent: 1,
       annualHomeValueGrowth: 3,
       annualOwnerTaxesRatePercent: 0.1,
+      purchaseCostsRatePercent: 3,
+      saleCostsRatePercent: 1.5,
       effectiveTaxReturnRatePercent: 37
     }
   });
 
   assert.ok(preview.grossMonthlyPayment > 0);
   assert.ok(preview.firstMonthTaxReturn > 0);
+  assert.equal(preview.purchaseCosts, 18000);
+  assert.equal(preview.saleCosts, 9000);
   assert.equal(
     preview.firstMonthNetPayment,
     Number((preview.grossMonthlyPayment + preview.firstMonthMaintenance + preview.firstMonthOwnerTaxes - preview.firstMonthTaxReturn).toFixed(2))
   );
+});
+
+test('mortgage purchase costs are posted once in first-month housing', () => {
+  const scenario = LifeSim.withDefaults({
+    life: { simulationYears: 1, annualInflation: 0 },
+    employment: { enabled: false },
+    expenses: { enabled: false },
+    rent: { enabled: false },
+    mortgage: {
+      enabled: true,
+      homeValue: 500000,
+      outstandingPrincipal: 500000,
+      annualInterestRate: 0,
+      remainingTermYears: 0,
+      annualMaintenanceRatePercent: 0,
+      annualHomeValueGrowth: 0,
+      annualOwnerTaxesRatePercent: 0,
+      purchaseCostsRatePercent: 3,
+      saleCostsRatePercent: 1.5,
+      effectiveTaxReturnRatePercent: 37
+    },
+    investing: { enabled: true, startingBalance: 25000, annualReturnPercent: 0, capitalGainsTaxRatePercent: 0 }
+  });
+
+  const result = LifeSim.simulate(scenario);
+  const firstMonth = result.yearly[0].months[0];
+  const purchaseCosts = firstMonth.lineItems.find((item) => item.label === 'Home purchase costs');
+  const investmentNetFlow = firstMonth.lineItems.find((item) => item.key === 'investmentNetFlow');
+
+  assert.equal(purchaseCosts.amount, -15000);
+  assert.equal(purchaseCosts.key, 'housingCosts');
+  assert.equal(result.yearly[0].metrics.housingCosts, -15000);
+  assert.equal(firstMonth.endingInvestments, 10000);
+  assert.equal(result.yearly[0].metrics.investmentNetFlow, -15000);
+  assert.equal(investmentNetFlow.amount, -15000);
 });
 
 test('mortgage scenario embeds tax return inside housing and reduces principal', () => {
@@ -164,6 +218,8 @@ test('mortgage scenario embeds tax return inside housing and reduces principal',
       annualMaintenanceRatePercent: 1,
       annualHomeValueGrowth: 2,
       annualOwnerTaxesRatePercent: 0.1,
+      purchaseCostsRatePercent: 3,
+      saleCostsRatePercent: 1.5,
       effectiveTaxReturnRatePercent: 37
     },
     investing: { enabled: true, startingBalance: 0, annualReturnPercent: 0, capitalGainsTaxRatePercent: 0 }
@@ -180,6 +236,37 @@ test('mortgage scenario embeds tax return inside housing and reduces principal',
   assert.ok(taxReturn.amount > 0);
   assert.ok(taxSummary.deductibleMortgageInterest > 0);
   assert.ok(taxSummary.mortgageInterestTaxReturn > 0);
+});
+
+test('home equity is shown after sale costs and can go negative', () => {
+  const scenario = LifeSim.withDefaults({
+    life: { simulationYears: 1, annualInflation: 0 },
+    employment: { enabled: false },
+    expenses: { enabled: false },
+    rent: { enabled: false },
+    mortgage: {
+      enabled: true,
+      homeValue: 100000,
+      outstandingPrincipal: 100000,
+      annualInterestRate: 0,
+      remainingTermYears: 0,
+      annualMaintenanceRatePercent: 0,
+      annualHomeValueGrowth: 0,
+      annualOwnerTaxesRatePercent: 0,
+      purchaseCostsRatePercent: 3,
+      saleCostsRatePercent: 1.5,
+      effectiveTaxReturnRatePercent: 37
+    },
+    investing: { enabled: true, startingBalance: 0, annualReturnPercent: 0, capitalGainsTaxRatePercent: 0 }
+  });
+
+  const result = LifeSim.simulate(scenario);
+  const year = result.yearly[0];
+  const month = year.months[11];
+
+  assert.equal(month.endingSaleCosts, 1500);
+  assert.equal(year.metrics.endingHomeEquity, -1500);
+  assert.equal(year.metrics.netWorth, year.metrics.endingInvestments - 1500);
 });
 
 test('negative investments produce a warning but simulation continues', () => {
@@ -204,7 +291,7 @@ test('investment tax uses gross annual investment gains and net growth stays aft
     expenses: { enabled: false },
     rent: { enabled: false },
     mortgage: { enabled: false },
-    investing: { enabled: true, startingBalance: 10000, annualReturnPercent: 12, capitalGainsTaxRatePercent: 25 }
+    investing: { enabled: true, startingBalance: 10000, annualReturnPercent: 12, capitalGainsTaxRatePercent: 25, taxUnrealizedGains: true }
   });
 
   const result = LifeSim.simulate(scenario);

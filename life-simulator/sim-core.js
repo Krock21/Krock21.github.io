@@ -80,6 +80,11 @@
     return Math.round((baseMortgage + singleBorrowerExtra) / 1000) * 1000;
   }
 
+  var DEFAULT_ANNUAL_INFLATION = 2.5;
+  var DEFAULT_ANNUAL_TOTAL_COMPENSATION = 150000;
+  var DEFAULT_HOME_VALUE = estimateHomeValueFromEmploymentIncome(DEFAULT_ANNUAL_TOTAL_COMPENSATION);
+  var DEFAULT_MONTHLY_RENT = Math.round((DEFAULT_HOME_VALUE * 0.03 / 12) / 50) * 50;
+
   function cloneScenario(input) {
     return JSON.parse(JSON.stringify(input || {}));
   }
@@ -89,11 +94,11 @@
     data.life = data.life || {};
 
     data.life.simulationYears = clamp(Math.round(toNumber(data.life.simulationYears, 30)), 1, 80);
-    data.life.annualInflation = toNumber(data.life.annualInflation, 3);
+    data.life.annualInflation = toNumber(data.life.annualInflation, DEFAULT_ANNUAL_INFLATION);
 
     if (data.employment) {
       data.employment.enabled = data.employment.enabled !== false;
-      data.employment.annualTotalCompensation = Math.max(0, toNumber(data.employment.annualTotalCompensation, 100000));
+      data.employment.annualTotalCompensation = Math.max(0, toNumber(data.employment.annualTotalCompensation, DEFAULT_ANNUAL_TOTAL_COMPENSATION));
       data.employment.annualRaisePercent = toNumber(data.employment.annualRaisePercent, 3);
       data.employment.effectiveBox1TaxRatePercent = Math.max(0, toNumber(data.employment.effectiveBox1TaxRatePercent, 37));
     }
@@ -105,7 +110,7 @@
 
     if (data.rent) {
       data.rent.enabled = data.rent.enabled !== false;
-      data.rent.monthlyRent = Math.max(0, toNumber(data.rent.monthlyRent, 2000));
+      data.rent.monthlyRent = Math.max(0, toNumber(data.rent.monthlyRent, DEFAULT_MONTHLY_RENT));
     }
 
     if (data.mortgage) {
@@ -114,7 +119,7 @@
         data.mortgage.homeValue,
         data.employment && data.employment.enabled
           ? estimateHomeValueFromEmploymentIncome(data.employment.annualTotalCompensation)
-          : 650000
+          : DEFAULT_HOME_VALUE
       ));
       data.mortgage.outstandingPrincipal = Math.max(0, toNumber(data.mortgage.outstandingPrincipal, data.mortgage.homeValue));
       data.mortgage.annualInterestRate = Math.max(0, toNumber(data.mortgage.annualInterestRate, 4));
@@ -122,6 +127,8 @@
       data.mortgage.annualMaintenanceRatePercent = Math.max(0, toNumber(data.mortgage.annualMaintenanceRatePercent, 1));
       data.mortgage.annualHomeValueGrowth = toNumber(data.mortgage.annualHomeValueGrowth, data.life.annualInflation);
       data.mortgage.annualOwnerTaxesRatePercent = Math.max(0, toNumber(data.mortgage.annualOwnerTaxesRatePercent, 0.1));
+      data.mortgage.purchaseCostsRatePercent = Math.max(0, toNumber(data.mortgage.purchaseCostsRatePercent, 3));
+      data.mortgage.saleCostsRatePercent = Math.max(0, toNumber(data.mortgage.saleCostsRatePercent, 1.5));
       data.mortgage.effectiveTaxReturnRatePercent = Math.max(0, toNumber(
         data.mortgage.effectiveTaxReturnRatePercent,
         data.employment && data.employment.enabled ? data.employment.effectiveBox1TaxRatePercent : 37
@@ -130,13 +137,13 @@
 
     if (data.investing) {
       data.investing.enabled = data.investing.enabled !== false;
-      data.investing.startingBalance = Math.max(0, toNumber(data.investing.startingBalance, 0));
+      data.investing.startingBalance = Math.max(0, toNumber(data.investing.startingBalance, 20000));
       data.investing.annualReturnPercent = toNumber(data.investing.annualReturnPercent, 7);
       if (data.investing.capitalGainsTaxRatePercent == null && data.investing.effectiveAnnualTaxPercent != null) {
         data.investing.capitalGainsTaxRatePercent = data.investing.effectiveAnnualTaxPercent;
       }
       data.investing.capitalGainsTaxRatePercent = Math.max(0, toNumber(data.investing.capitalGainsTaxRatePercent, 36));
-      data.investing.taxUnrealizedGains = toBoolean(data.investing.taxUnrealizedGains, true);
+      data.investing.taxUnrealizedGains = toBoolean(data.investing.taxUnrealizedGains, false);
     }
 
     return data;
@@ -195,7 +202,9 @@
         firstMonthMaintenance: 0,
         firstMonthOwnerTaxes: 0,
         firstMonthTaxReturn: 0,
-        firstMonthNetPayment: 0
+        firstMonthNetPayment: 0,
+        purchaseCosts: 0,
+        saleCosts: 0
       };
     }
 
@@ -209,6 +218,8 @@
     var firstMonthMaintenance = round2((scenario.mortgage.homeValue * (scenario.mortgage.annualMaintenanceRatePercent / 100)) / 12);
     var firstMonthOwnerTaxes = round2((scenario.mortgage.homeValue * (scenario.mortgage.annualOwnerTaxesRatePercent / 100)) / 12);
     var firstMonthTaxReturn = round2(firstMonthInterest * (scenario.mortgage.effectiveTaxReturnRatePercent / 100));
+    var purchaseCosts = round2(scenario.mortgage.homeValue * (scenario.mortgage.purchaseCostsRatePercent / 100));
+    var saleCosts = round2(scenario.mortgage.homeValue * (scenario.mortgage.saleCostsRatePercent / 100));
 
     return {
       grossMonthlyPayment: grossMonthlyPayment,
@@ -217,7 +228,9 @@
       firstMonthMaintenance: firstMonthMaintenance,
       firstMonthOwnerTaxes: firstMonthOwnerTaxes,
       firstMonthTaxReturn: firstMonthTaxReturn,
-      firstMonthNetPayment: round2(grossMonthlyPayment + firstMonthMaintenance + firstMonthOwnerTaxes - firstMonthTaxReturn)
+      firstMonthNetPayment: round2(grossMonthlyPayment + firstMonthMaintenance + firstMonthOwnerTaxes - firstMonthTaxReturn),
+      purchaseCosts: purchaseCosts,
+      saleCosts: saleCosts
     };
   }
 
@@ -225,11 +238,11 @@
     return withDefaults({
       life: {
         simulationYears: 30,
-        annualInflation: 3
+        annualInflation: DEFAULT_ANNUAL_INFLATION
       },
       employment: {
         enabled: true,
-        annualTotalCompensation: 100000,
+        annualTotalCompensation: DEFAULT_ANNUAL_TOTAL_COMPENSATION,
         annualRaisePercent: 3,
         effectiveBox1TaxRatePercent: 37
       },
@@ -239,25 +252,27 @@
       },
       rent: {
         enabled: true,
-        monthlyRent: 2000
+        monthlyRent: DEFAULT_MONTHLY_RENT
       },
       mortgage: {
         enabled: false,
-        homeValue: estimateHomeValueFromEmploymentIncome(100000),
-        outstandingPrincipal: estimateHomeValueFromEmploymentIncome(100000),
+        homeValue: DEFAULT_HOME_VALUE,
+        outstandingPrincipal: DEFAULT_HOME_VALUE,
         annualInterestRate: 4,
         remainingTermYears: 30,
         annualMaintenanceRatePercent: 1,
-        annualHomeValueGrowth: 3,
+        annualHomeValueGrowth: DEFAULT_ANNUAL_INFLATION,
         annualOwnerTaxesRatePercent: 0.1,
+        purchaseCostsRatePercent: 3,
+        saleCostsRatePercent: 1.5,
         effectiveTaxReturnRatePercent: 37
       },
       investing: {
         enabled: true,
-        startingBalance: 0,
+        startingBalance: 20000,
         annualReturnPercent: 7,
         capitalGainsTaxRatePercent: 36,
-        taxUnrealizedGains: true
+        taxUnrealizedGains: false
       }
     });
   }
@@ -293,6 +308,10 @@
     var mortgageBalance = scenario.mortgage && scenario.mortgage.enabled ? scenario.mortgage.outstandingPrincipal : 0;
     var mortgageRemainingMonths = scenario.mortgage && scenario.mortgage.enabled ? Math.round(scenario.mortgage.remainingTermYears * 12) : 0;
     var homeValue = scenario.mortgage && scenario.mortgage.enabled ? scenario.mortgage.homeValue : 0;
+    var purchaseCosts = scenario.mortgage && scenario.mortgage.enabled
+      ? round2(scenario.mortgage.homeValue * (scenario.mortgage.purchaseCostsRatePercent / 100))
+      : 0;
+    var purchaseCostsPosted = false;
 
     var annualCompensation = scenario.employment && scenario.employment.enabled ? scenario.employment.annualTotalCompensation : 0;
     var annualRaisePercent = scenario.employment && scenario.employment.enabled ? scenario.employment.annualRaisePercent : 0;
@@ -345,8 +364,8 @@
       for (monthIndex = 0; monthIndex < 12; monthIndex += 1) {
         var monthLabel = MONTH_NAMES[monthIndex];
         var lineItems = [];
-        var openingInvestmentBalance = investmentBalance;
         var monthlyInvestmentNetFlow = 0;
+        var openingInvestmentBalance = investmentBalance;
         var salaryGross = round2(annualCompensation / 12);
         var salaryTax = round2(salaryGross * ((scenario.employment && scenario.employment.enabled ? scenario.employment.effectiveBox1TaxRatePercent : 0) / 100));
         var salaryNet = round2(salaryGross - salaryTax);
@@ -438,6 +457,24 @@
         }
 
         if (scenario.mortgage && scenario.mortgage.enabled) {
+          if (!purchaseCostsPosted && purchaseCosts > 0) {
+            monthlyInvestmentNetFlow = round2(monthlyInvestmentNetFlow - purchaseCosts);
+            year.metrics.housingCosts = round2(year.metrics.housingCosts - purchaseCosts);
+            lineItems.push({
+              key: 'housingCosts',
+              label: 'Home purchase costs',
+              amount: -purchaseCosts,
+              blockType: 'Mortgage',
+              formula: 'homeValue * purchaseCostsRatePercent',
+              explanation: 'Purchase costs are posted once in the first simulated month as part of housing spend.',
+              inputs: {
+                homeValue: scenario.mortgage.homeValue,
+                purchaseCostsRatePercent: scenario.mortgage.purchaseCostsRatePercent,
+                purchaseCosts: purchaseCosts
+              }
+            });
+            purchaseCostsPosted = true;
+          }
           var mortgageRate = scenario.mortgage.annualInterestRate / 100 / 12;
           if (mortgageRemainingMonths > 0 && mortgageBalance > 0) {
             mortgagePayment = computeMonthlyMortgagePayment(mortgageBalance, scenario.mortgage.annualInterestRate, mortgageRemainingMonths);
@@ -602,7 +639,10 @@
           lineItems: lineItems,
           endingInvestments: round2(investmentBalance),
           endingPrincipal: round2(mortgageBalance),
-          endingHomeValue: round2(homeValue)
+          endingHomeValue: round2(homeValue),
+          endingSaleCosts: scenario.mortgage && scenario.mortgage.enabled
+            ? round2(homeValue * (scenario.mortgage.saleCostsRatePercent / 100))
+            : 0
         });
       }
 
@@ -632,8 +672,10 @@
       };
 
       year.metrics.endingInvestments = round2(investmentBalance);
-      year.metrics.endingHomeEquity = round2(Math.max(0, homeValue - mortgageBalance));
-      year.metrics.netWorth = round2(investmentBalance + Math.max(0, homeValue - mortgageBalance));
+      year.metrics.endingHomeEquity = scenario.mortgage && scenario.mortgage.enabled
+        ? round2(homeValue - round2(homeValue * (scenario.mortgage.saleCostsRatePercent / 100)) - mortgageBalance)
+        : 0;
+      year.metrics.netWorth = round2(investmentBalance + year.metrics.endingHomeEquity);
 
       yearly.push(year);
     }

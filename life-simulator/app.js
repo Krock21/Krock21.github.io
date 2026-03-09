@@ -5,7 +5,7 @@
   var VIEW_STORAGE_KEY = 'life-simulator-view-v1';
   var VERSION_COOKIE_KEY = 'life-simulator-page-version';
   var VERSION_FALLBACK_KEY = 'life-simulator-page-version-fallback';
-  var PAGE_VERSION = '2026-03-08-zero-cash-1';
+  var PAGE_VERSION = '2026-03-09-global-defaults-2';
   var BLOCK_META = {
     life: {
       label: 'Life',
@@ -13,54 +13,56 @@
       alwaysOn: true,
       fields: [
         { key: 'simulationYears', label: 'Simulation years', type: 'number', step: '1', min: '1', help: 'Shown as Year 1, Year 2, and so on.' },
-        { key: 'annualInflation', label: 'Annual inflation (%)', type: 'number', step: '0.1', help: 'Expenses, rent, and the default mortgage home-growth assumption use this rate.' }
+        { key: 'annualInflation', label: 'Annual inflation (%)', type: 'number', step: '0.1', help: 'Default 2.5% is a neutral long-run inflation baseline for planning. Expenses, rent, and the default mortgage home-growth assumption use this rate.' }
       ]
     },
     employment: {
       label: 'Employment',
       description: 'Income from work, expressed as total annual compensation, annual raises, and a flat effective box 1 rate.',
       fields: [
-        { key: 'annualTotalCompensation', label: 'Annual total compensation (€)', type: 'number', step: '1000', help: 'Paid evenly across 12 months.' },
-        { key: 'annualRaisePercent', label: 'Expected annual raise (%)', type: 'number', step: '0.1', help: 'Applied at the start of each new simulation year.' },
-        { key: 'effectiveBox1TaxRatePercent', label: 'Effective box 1 tax rate (%)', type: 'number', step: '0.1', help: 'Flat future-looking income tax approximation used for Employment income.' }
+        { key: 'annualTotalCompensation', label: 'Annual total compensation (€)', type: 'number', step: '1000', help: 'Default €150,000 is the seeded planning scenario and is paid evenly across 12 months.' },
+        { key: 'annualRaisePercent', label: 'Expected annual raise (%)', type: 'number', step: '0.1', help: 'Default 3% is a neutral long-run nominal wage-growth assumption, applied at the start of each new simulation year.' },
+        { key: 'effectiveBox1TaxRatePercent', label: 'Effective box 1 tax rate (%)', type: 'number', step: '0.1', help: 'Editable flat income-tax assumption used for planning rather than a full legal tax table.' }
       ]
     },
     expenses: {
       label: 'Expenses',
       description: 'Living costs such as food, transportation, and health insurance.',
       fields: [
-        { key: 'monthlyAmount', label: 'Monthly amount (€)', type: 'number', step: '50', help: 'This grows automatically with Life inflation.' }
+        { key: 'monthlyAmount', label: 'Monthly amount (€)', type: 'number', step: '50', help: 'Default €2,500 is a planning placeholder for recurring living costs. This grows automatically with Life inflation.' }
       ]
     },
     rent: {
       label: 'Rent',
       description: 'Monthly rent including renter insurance.',
       fields: [
-        { key: 'monthlyRent', label: 'Monthly rent (€)', type: 'number', step: '50', help: 'This grows automatically with Life inflation.' }
+        { key: 'monthlyRent', label: 'Monthly rent (€)', type: 'number', step: '50', help: 'Default €1,750 is seeded as roughly 3% annual rent on the default home value implied by the default €150,000 compensation. It then grows with Life inflation.' }
       ]
     },
     mortgage: {
       label: 'Mortgage',
-      description: 'Owner-occupied home driven by home value, percentage-based upkeep, and a flat mortgage-interest tax return rate.',
+      description: 'Owner-occupied home driven by home value, percentage-based upkeep, purchase/sale costs, and a flat mortgage-interest tax return rate.',
       fields: [
-        { key: 'homeValue', label: 'Home value (€)', type: 'number', step: '1000', help: 'Defaults from Employment annual compensation and follows it until you edit home value directly.' },
+        { key: 'homeValue', label: 'Home value (€)', type: 'number', step: '1000', help: 'Default home value is estimated from Employment compensation and follows it until you edit home value directly.' },
         { key: 'outstandingPrincipal', label: 'Outstanding principal (€)', type: 'number', step: '1000', help: 'Defaults to home value and follows it until you edit principal directly.' },
-        { key: 'annualInterestRate', label: 'Annual interest rate (%)', type: 'number', step: '0.01', help: 'Used in the gross monthly annuity payment.' },
+        { key: 'annualInterestRate', label: 'Annual interest rate (%)', type: 'number', step: '0.01', help: 'Default 4% is a neutral long-run mortgage-rate planning assumption used in the gross monthly annuity payment.' },
         { key: 'remainingTermYears', label: 'Remaining term (years)', type: 'number', step: '1', help: 'Total years remaining on the mortgage.' },
-        { key: 'annualMaintenanceRatePercent', label: 'Annual maintenance (% of home value)', type: 'number', step: '0.1', help: 'Used to derive yearly maintenance from the opening home value of each simulation year.' },
-        { key: 'annualHomeValueGrowth', label: 'Annual home value growth (%)', type: 'number', step: '0.1', help: 'Defaults to Life inflation and follows it until you edit this field directly.' },
-        { key: 'annualOwnerTaxesRatePercent', label: 'Annual owner taxes (% of home value)', type: 'number', step: '0.01', help: 'Used to derive yearly owner taxes from the opening home value of each simulation year.' },
-        { key: 'effectiveTaxReturnRatePercent', label: 'Effective tax return rate (%)', type: 'number', step: '0.1', help: 'Applied only to mortgage interest as a flat future-looking tax return.' },
+        { key: 'annualMaintenanceRatePercent', label: 'Annual maintenance (% of home value)', type: 'number', step: '0.1', help: 'Default 1% is a common long-run homeowner-maintenance rule of thumb.' },
+        { key: 'annualHomeValueGrowth', label: 'Annual home value growth (%)', type: 'number', step: '0.1', help: 'Defaults to Life inflation as a conservative long-run nominal home-growth assumption and follows it until you edit this field directly.' },
+        { key: 'annualOwnerTaxesRatePercent', label: 'Annual owner taxes (% of home value)', type: 'number', step: '0.01', help: 'Default 0.1% is a stylized ownership-cost placeholder used to derive yearly owner taxes.' },
+        { key: 'purchaseCostsRatePercent', label: 'Purchase costs (% of home value)', type: 'number', step: '0.1', help: 'Default 3% is a planning placeholder for one-time buyer closing costs and taxes.' },
+        { key: 'saleCostsRatePercent', label: 'Sale costs (% of home value)', type: 'number', step: '0.1', help: 'Default 1.5% is a planning placeholder for sale friction when home equity is shown as net sale proceeds.' },
+        { key: 'effectiveTaxReturnRatePercent', label: 'Effective tax return rate (%)', type: 'number', step: '0.1', help: 'Editable flat mortgage-interest tax-return assumption used for planning.' },
       ]
     },
     investing: {
       label: 'Investing',
       description: 'Investment account that also acts as the settlement balance for monthly surpluses and deficits.',
       fields: [
-        { key: 'startingBalance', label: 'Starting invested balance (€)', type: 'number', step: '1000', help: 'Already invested before month 1 begins.' },
-        { key: 'annualReturnPercent', label: 'Expected annual return (%)', type: 'number', step: '0.1', help: 'Growth is applied monthly on the last day of the month.' },
-        { key: 'capitalGainsTaxRatePercent', label: 'Capital gains tax rate (%)', type: 'number', step: '0.1', help: 'Defaulted to the current official Dutch box 3 rate used as the future-looking approximation.' },
-        { key: 'taxUnrealizedGains', label: 'Tax unrealised gains', type: 'checkbox', help: 'If checked, yearly paper gains are taxed. If unchecked, v1 only taxes realized gains, which means no investment tax unless sales are modeled.' }
+        { key: 'startingBalance', label: 'Starting invested balance (€)', type: 'number', step: '1000', help: 'Default €20,000 gives the seeded scenario a small existing portfolio before month 1 begins.' },
+        { key: 'annualReturnPercent', label: 'Expected annual return (%)', type: 'number', step: '0.1', help: 'Default 7% is a long-run global equity-return assumption for planning, not a short-term market forecast.' },
+        { key: 'capitalGainsTaxRatePercent', label: 'Capital gains tax rate (%)', type: 'number', step: '0.1', help: 'Default 36% remains editable because the tax model is simplified and jurisdiction-specific.' },
+        { key: 'taxUnrealizedGains', label: 'Tax unrealised gains', type: 'checkbox', help: 'Default off to keep the baseline closer to a realized-gains-style planning model. If checked, yearly paper gains are taxed.' }
       ]
     },
     taxes: {
@@ -103,6 +105,7 @@
     isDetailOpen: false,
     isConfigOpen: false
   };
+  var chartInstances = [];
 
   function getCookie(name) {
     var cookies = typeof document !== 'undefined' && document.cookie ? document.cookie.split('; ') : [];
@@ -239,6 +242,15 @@
     }).format(value);
   }
 
+  function formatCompactCurrency(value) {
+    return new Intl.NumberFormat('en-NL', {
+      style: 'currency',
+      currency: 'EUR',
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value);
+  }
+
   function formatPercent(value, fractionDigits) {
     var digits = fractionDigits == null ? 2 : fractionDigits;
     var normalized = Math.abs(value) <= 1 ? value * 100 : value;
@@ -275,6 +287,23 @@
   function formatMoney(value, yearNumber, absolute) {
     var adjusted = displayMoney(value, yearNumber);
     return formatCurrency(absolute ? Math.abs(adjusted) : adjusted);
+  }
+
+  function disposeCharts() {
+    chartInstances.forEach(function (instance) {
+      if (instance && !instance.isDisposed()) {
+        instance.dispose();
+      }
+    });
+    chartInstances = [];
+  }
+
+  function resizeCharts() {
+    chartInstances.forEach(function (instance) {
+      if (instance && !instance.isDisposed()) {
+        instance.resize();
+      }
+    });
   }
 
   function applyDerivedScenarioLinks() {
@@ -428,6 +457,9 @@
       annualMaintenanceAmount: roundMoney(openingHomeValueForYear * (state.scenario.mortgage.annualMaintenanceRatePercent / 100)),
       annualOwnerTaxesRatePercent: state.scenario.mortgage.annualOwnerTaxesRatePercent,
       annualOwnerTaxesAmount: roundMoney(openingHomeValueForYear * (state.scenario.mortgage.annualOwnerTaxesRatePercent / 100)),
+      purchaseCostsRatePercent: state.scenario.mortgage.purchaseCostsRatePercent,
+      purchaseCostsAmount: roundMoney(state.scenario.mortgage.homeValue * (state.scenario.mortgage.purchaseCostsRatePercent / 100)),
+      saleCostsRatePercent: state.scenario.mortgage.saleCostsRatePercent,
       annualHomeValueGrowth: state.scenario.mortgage.annualHomeValueGrowth,
       effectiveTaxReturnRatePercent: state.scenario.mortgage.effectiveTaxReturnRatePercent
     };
@@ -660,7 +692,7 @@
 
     var intro = document.createElement('p');
     intro.className = 'block-config-status';
-    intro.textContent = 'These previews are based on the current mortgage inputs. The net payment includes first-month maintenance, owner taxes, and mortgage tax return.';
+    intro.textContent = 'These previews are based on the current mortgage inputs. The net payment includes first-month maintenance, owner taxes, and mortgage tax return. Purchase costs hit first-month housing once, and sale costs are used when showing equity.';
     wrapper.appendChild(intro);
 
     var preview = LifeSim.getMortgagePreview(state.scenario);
@@ -669,6 +701,8 @@
     appendReadonlyItem(grid, 'Gross monthly payment', formatCurrency(preview.grossMonthlyPayment));
     appendReadonlyItem(grid, 'First month tax return', formatCurrency(preview.firstMonthTaxReturn));
     appendReadonlyItem(grid, 'First month net payment', formatCurrency(preview.firstMonthNetPayment));
+    appendReadonlyItem(grid, 'Purchase costs today', formatCurrency(preview.purchaseCosts));
+    appendReadonlyItem(grid, 'Sale costs today', formatCurrency(preview.saleCosts));
     wrapper.appendChild(grid);
 
     var linkStatus = document.createElement('p');
@@ -1081,10 +1115,12 @@
         value: year.metrics.housingCosts,
         displayYearNumber: year.yearNumber,
         explanation: 'Housing spend comes from the Mortgage block and is shown after the mortgage interest tax return offsets part of the monthly outflow.',
-        formula: 'gross mortgage payment + maintenance + owner taxes - mortgage tax return',
+        formula: 'gross mortgage payment + purchase costs + maintenance + owner taxes - mortgage tax return',
         sourceBlocks: ['Mortgage'],
         inputs: {
           openingHomeValueForYear: mortgageValues.openingHomeValueForYear,
+          purchaseCostsRatePercent: mortgageValues.purchaseCostsRatePercent,
+          purchaseCosts: Math.abs(groupedLineItems['Home purchase costs'] || 0),
           annualMaintenanceRatePercent: mortgageValues.annualMaintenanceRatePercent,
           annualOwnerTaxesRatePercent: mortgageValues.annualOwnerTaxesRatePercent,
           grossMortgagePayments: Math.abs(groupedLineItems['Mortgage gross payment'] || 0),
@@ -1094,6 +1130,7 @@
           netHousingCost: Math.abs(year.metrics.housingCosts)
         },
         rollupSteps: [
+          'If this is Year 1, add one-time purchase costs in the first simulated month.',
           'Post the gross annuity mortgage payment each month and split it into interest and principal inside the trace.',
           'Add monthly maintenance and owner taxes derived from the opening home value of the year.',
           'Apply the mortgage interest tax return against the monthly interest portion only.',
@@ -1104,21 +1141,13 @@
     }
 
     if (metricKey === 'investmentNetFlow') {
-      if (!state.scenario.investing || !state.scenario.investing.enabled) {
-        return buildTraceDetail({
-          title: year.yearLabel + ' investments flow',
-          value: year.metrics.investmentNetFlow,
-          displayYearNumber: year.yearNumber,
-          explanation: 'Investing is disabled in this scenario, so monthly net flows are not settled into an investment balance.',
-          formula: '0',
-          sourceBlocks: ['Investing']
-        });
-      }
       return buildTraceDetail({
         title: year.yearLabel + ' investments flow',
         value: year.metrics.investmentNetFlow,
         displayYearNumber: year.yearNumber,
-        explanation: 'Investments flow is the signed monthly residual after after-tax income, living expenses, and housing costs. Positive values add money to investments and negative values withdraw from investments.',
+        explanation: (state.scenario.investing && state.scenario.investing.enabled
+          ? 'Investments flow is the signed monthly residual after after-tax income, living expenses, and housing costs.'
+          : 'Investing growth is disabled, but the settlement balance still absorbs monthly surpluses and deficits because the model holds no separate cash account.'),
         formula: 'sum of monthly (net income - expenses - housing costs)',
         sourceBlocks: uniqueStrings(['Investing', 'Employment', 'Expenses', state.scenario.rent && state.scenario.rent.enabled ? 'Rent' : null, state.scenario.mortgage && state.scenario.mortgage.enabled ? 'Mortgage' : null]),
         inputs: {
@@ -1180,11 +1209,15 @@
         title: year.yearLabel + ' ending investments',
         value: year.metrics.endingInvestments,
         displayYearNumber: year.yearNumber,
-        explanation: 'Ending investments combine the starting invested balance, the year\'s signed investment flows, and the year\'s net investment growth.',
+        explanation: state.scenario.investing && state.scenario.investing.enabled
+          ? 'Ending investments combine the starting invested balance, the year\'s signed investment flows, and the year\'s net investment growth.'
+          : 'Ending investments combine the settlement balance and the year\'s signed investment flows. Investment growth is off because the Investing block is disabled.',
         formula: 'starting investments + investments flow + net growth',
-        sourceBlocks: ['Investing'],
+        sourceBlocks: uniqueStrings(['Investing'].concat(collectMetricLineItems(year, 'investmentNetFlow').map(function (entry) {
+          return entry.lineItem.blockType;
+        }))),
         inputs: {
-          startingInvestmentsForYear: previousYear ? previousYear.metrics.endingInvestments : (state.scenario.investing ? state.scenario.investing.startingBalance : 0),
+          startingInvestmentsForYear: previousYear ? previousYear.metrics.endingInvestments : (state.scenario.investing && state.scenario.investing.enabled ? state.scenario.investing.startingBalance : 0),
           investmentNetFlow: year.metrics.investmentNetFlow,
           investmentGrowth: year.metrics.investmentGrowth,
           endingInvestments: year.metrics.endingInvestments
@@ -1204,18 +1237,21 @@
         title: year.yearLabel + ' ending home equity',
         value: year.metrics.endingHomeEquity,
         displayYearNumber: year.yearNumber,
-        explanation: 'Home equity is the ending home value minus the ending mortgage principal.',
-        formula: 'ending home value - ending principal',
+        explanation: 'Home equity is modeled as net sale proceeds: ending home value minus sale costs minus the ending mortgage principal.',
+        formula: 'ending home value - sale costs - ending principal',
         sourceBlocks: ['Mortgage'],
         inputs: {
           endingHomeValue: endingMonth.endingHomeValue,
+          saleCostsRatePercent: state.scenario.mortgage && state.scenario.mortgage.enabled ? state.scenario.mortgage.saleCostsRatePercent : 0,
+          endingSaleCosts: endingMonth.endingSaleCosts || 0,
           endingPrincipal: endingMonth.endingPrincipal,
           endingHomeEquity: year.metrics.endingHomeEquity
         },
         rollupSteps: [
           'Step home value forward monthly using the home growth assumption.',
           'Reduce principal through the mortgage payment schedule.',
-          'Subtract ending principal from ending home value.'
+          'Calculate sale costs from the ending home value and the Mortgage sale-cost rate.',
+          'Subtract sale costs and ending principal from ending home value.'
         ]
       });
     }
@@ -1225,7 +1261,7 @@
         title: year.yearLabel + ' net worth',
         value: year.metrics.netWorth,
         displayYearNumber: year.yearNumber,
-        explanation: 'Net worth is the sum of ending investments and ending home equity.',
+        explanation: 'Net worth is the sum of ending investments and home equity, where home equity is already shown after modeled sale costs.',
         formula: 'ending investments + ending home equity',
         sourceBlocks: ['Investing', 'Mortgage'],
         inputs: {
@@ -1266,18 +1302,19 @@
         value: metricKey === 'endingInvestments'
           ? month.endingInvestments
           : metricKey === 'endingHomeEquity'
-            ? Math.max(0, month.endingHomeValue - month.endingPrincipal)
-            : month.endingInvestments + Math.max(0, month.endingHomeValue - month.endingPrincipal),
+            ? month.endingHomeValue - (month.endingSaleCosts || 0) - month.endingPrincipal
+            : month.endingInvestments + (month.endingHomeValue - (month.endingSaleCosts || 0) - month.endingPrincipal),
         displayYearNumber: year.yearNumber,
         explanation: 'This ending balance reflects the selected month after all first-day settlement flows and any month-end growth have been applied.',
         formula: metricKey === 'netWorth'
           ? 'ending investments + ending home equity'
           : metricKey === 'endingHomeEquity'
-            ? 'ending home value - ending principal'
+            ? 'ending home value - sale costs - ending principal'
             : 'ending balance after monthly postings',
         sourceBlocks: uniqueStrings(month.lineItems.map(function (lineItem) { return lineItem.blockType; })),
         inputs: {
           endingInvestments: month.endingInvestments,
+          endingSaleCosts: month.endingSaleCosts || 0,
           endingPrincipal: month.endingPrincipal,
           endingHomeValue: month.endingHomeValue
         }
@@ -1309,114 +1346,333 @@
 
   function renderChart() {
     var chartArea = document.getElementById('chart-area');
+    var panels = [];
+    var rentComparisonResult;
+    var mortgageComparisonResult;
+    disposeCharts();
     chartArea.innerHTML = '';
-    var years = state.result.yearly;
-    if (!years.length) {
+    if (!state.result.yearly.length) {
       return;
     }
+    panels.push(buildChartPanel({
+      title: 'Trajectory',
+      subtitle: 'Ending balances by simulation year.',
+      series: [
+        { label: 'Net worth', color: '#0d6b62', values: buildMetricSeries(state.result, 'netWorth') },
+        { label: 'Ending investments', color: '#b84f2c', values: buildMetricSeries(state.result, 'endingInvestments') },
+        { label: 'Home equity', color: '#1f3f59', values: buildMetricSeries(state.result, 'endingHomeEquity') }
+      ]
+    }));
 
-    var extrema = years.reduce(function (acc, year) {
-      [
-        displayMoney(year.metrics.netWorth, year.yearNumber),
-        displayMoney(year.metrics.endingInvestments, year.yearNumber),
-        displayMoney(year.metrics.endingHomeEquity, year.yearNumber)
-      ].forEach(function (value) {
-        acc.min = Math.min(acc.min, value);
-        acc.max = Math.max(acc.max, value);
-      });
+    rentComparisonResult = buildHousingComparisonResult('rent');
+    mortgageComparisonResult = buildHousingComparisonResult('mortgage');
+
+    panels.push(buildChartPanel({
+      title: 'Rent vs Mortgage',
+      subtitle: 'Net worth using each saved housing setup.',
+      series: [
+        { label: 'Renter net worth', color: '#b84f2c', values: buildMetricSeries(rentComparisonResult, 'netWorth') },
+        { label: 'Mortgage net worth', color: '#0d6b62', values: buildMetricSeries(mortgageComparisonResult, 'netWorth') }
+      ]
+    }));
+
+    panels.push(buildChartPanel({
+      title: 'Rent vs Mortgage difference',
+      subtitle: 'Mortgage net worth minus renter net worth.',
+      optionConfig: {
+        emphasizeZeroLine: true,
+        tooltipFormatter: buildDifferenceTooltipFormatter
+      },
+      series: [
+        { label: 'Difference', color: '#7a5a16', values: buildHousingDifferenceSeries(rentComparisonResult, mortgageComparisonResult) }
+      ]
+    }));
+
+    panels.forEach(function (entry) {
+      chartArea.appendChild(entry.panel);
+      initializeChartHost(entry.host, entry.series, entry.optionConfig);
+    });
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function ensureHousingScenario(baseScenario) {
+    var scenario = cloneData(baseScenario);
+    var defaults = LifeSim.defaultScenario();
+    if (!scenario.rent) {
+      scenario.rent = cloneData(defaults.rent);
+    }
+    if (!scenario.mortgage) {
+      scenario.mortgage = cloneData(defaults.mortgage);
+    }
+    return scenario;
+  }
+
+  function buildHousingComparisonResult(mode) {
+    var comparisonScenario = ensureHousingScenario(state.scenario);
+    comparisonScenario.rent.enabled = mode === 'rent';
+    comparisonScenario.mortgage.enabled = mode === 'mortgage';
+    return LifeSim.simulate(comparisonScenario);
+  }
+
+  function buildMetricSeries(result, metricKey) {
+    return result.yearly.map(function (year) {
+      return {
+        yearNumber: year.yearNumber,
+        value: year.metrics[metricKey]
+      };
+    });
+  }
+
+  function buildHousingDifferenceSeries(rentResult, mortgageResult) {
+    var rentSeries = buildMetricSeries(rentResult, 'netWorth').reduce(function (acc, point) {
+      acc[point.yearNumber] = point.value;
       return acc;
-    }, { min: 0, max: 0 });
-    var minValue = extrema.min;
-    var maxValue = extrema.max;
-    var valueRange = maxValue - minValue;
-    var width = Math.max(760, years.length * 34);
-    var height = 220;
-    var paddingX = 40;
-    var paddingY = 24;
-    var stepX = (width - paddingX * 2) / Math.max(1, years.length - 1);
+    }, Object.create(null));
 
-    function toY(value) {
-      if (valueRange <= 0) {
-        return height / 2;
-      }
-      return height - paddingY - ((value - minValue) / valueRange) * (height - paddingY * 2);
-    }
+    return buildMetricSeries(mortgageResult, 'netWorth').map(function (point) {
+      var rentValue = rentSeries[point.yearNumber] || 0;
+      return {
+        yearNumber: point.yearNumber,
+        value: point.value - rentValue,
+        mortgageValue: point.value,
+        rentValue: rentValue
+      };
+    });
+  }
 
-    function buildPath(metricKey) {
-      return years.map(function (year, index) {
-        var x = paddingX + stepX * index;
-        var y = toY(displayMoney(year.metrics[metricKey], year.yearNumber));
-        return (index === 0 ? 'M' : 'L') + x + ' ' + y;
-      }).join(' ');
-    }
+  function buildChartPanel(options) {
+    var panel = document.createElement('section');
+    panel.className = 'chart-panel';
 
+    var heading = document.createElement('div');
+    heading.className = 'chart-panel-heading';
+    var title = document.createElement('h3');
+    title.textContent = options.title;
+    var subtitle = document.createElement('p');
+    subtitle.textContent = options.subtitle;
+    heading.appendChild(title);
+    heading.appendChild(subtitle);
+    panel.appendChild(heading);
+    var chartShell = buildInteractiveChart();
+    panel.appendChild(chartShell.shell);
+
+    return {
+      panel: panel,
+      host: chartShell.host,
+      series: options.series,
+      optionConfig: options.optionConfig || null
+    };
+  }
+
+  function buildInteractiveChart() {
     var shell = document.createElement('div');
     shell.className = 'chart-shell';
 
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
-    svg.setAttribute('class', 'chart-svg');
+    var host = document.createElement('div');
+    host.className = 'chart-host';
+    shell.appendChild(host);
 
-    [0, 0.25, 0.5, 0.75, 1].forEach(function (tick) {
-      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      var valueAtTick = minValue + tick * valueRange;
-      var y = toY(valueAtTick);
-      line.setAttribute('x1', paddingX);
-      line.setAttribute('x2', width - paddingX);
-      line.setAttribute('y1', y);
-      line.setAttribute('y2', y);
-      line.setAttribute('stroke', Math.abs(valueAtTick) < Math.max(1, valueRange * 0.01) ? 'rgba(29,26,22,0.22)' : 'rgba(29,26,22,0.12)');
-      line.setAttribute('stroke-dasharray', Math.abs(valueAtTick) < Math.max(1, valueRange * 0.01) ? '0' : '4 6');
-      svg.appendChild(line);
-    });
+    return {
+      shell: shell,
+      host: host
+    };
+  }
 
-    var series = [
-      { key: 'netWorth', color: '#0d6b62' },
-      { key: 'endingInvestments', color: '#b84f2c' },
-      { key: 'endingHomeEquity', color: '#1f3f59' }
-    ];
+  function initializeChartHost(host, series, optionConfig) {
+    if (typeof echarts === 'undefined') {
+      var fallback = document.createElement('div');
+      fallback.className = 'chart-fallback';
+      fallback.textContent = 'Chart library failed to load.';
+      host.replaceWith(fallback);
+      return;
+    }
 
-    series.forEach(function (item) {
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', buildPath(item.key));
-      path.setAttribute('fill', 'none');
-      path.setAttribute('stroke', item.color);
-      path.setAttribute('stroke-width', '3');
-      path.setAttribute('stroke-linecap', 'round');
-      svg.appendChild(path);
-    });
+    var instance = echarts.init(host, null, { renderer: 'canvas' });
+    chartInstances.push(instance);
+    instance.setOption(buildChartOption(series, optionConfig), true);
+  }
 
-    years.forEach(function (year, index) {
-      var x = paddingX + stepX * index;
-      var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      label.setAttribute('x', x);
-      label.setAttribute('y', height - 6);
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('font-size', '11');
-      label.setAttribute('fill', '#625749');
-      label.textContent = year.yearNumber;
-      svg.appendChild(label);
-    });
+  function buildTooltipRowHtml(markerHtml, label, value) {
+    return '<div class="chart-tooltip-row"><span class="chart-tooltip-label">' + markerHtml + label + '</span><strong>' + value + '</strong></div>';
+  }
 
-    shell.appendChild(svg);
-    chartArea.appendChild(shell);
+  function defaultChartTooltipFormatter(params) {
+    if (!params || !params.length) {
+      return '';
+    }
+    return [
+      '<div class="chart-tooltip-title">Year ' + params[0].data.yearNumber + '</div>'
+    ].concat(params.map(function (param) {
+      return buildTooltipRowHtml(param.marker, param.seriesName, formatCurrency(param.data.displayValue));
+    })).join('');
+  }
 
-    var legend = document.createElement('div');
-    legend.className = 'chart-legend';
-    [
-      { label: 'Net worth', color: '#0d6b62' },
-      { label: 'Ending investments', color: '#b84f2c' },
-      { label: 'Home equity', color: '#1f3f59' }
-    ].forEach(function (entry) {
-      var item = document.createElement('span');
-      var swatch = document.createElement('span');
-      swatch.className = 'legend-swatch';
-      swatch.style.background = entry.color;
-      item.appendChild(swatch);
-      item.appendChild(document.createTextNode(entry.label));
-      legend.appendChild(item);
-    });
-    chartArea.appendChild(legend);
+  function buildDifferenceTooltipFormatter(params) {
+    if (!params || !params.length) {
+      return '';
+    }
+    var point = params[0].data;
+    return [
+      '<div class="chart-tooltip-title">Year ' + point.yearNumber + '</div>',
+      buildTooltipRowHtml(params[0].marker, 'Difference', formatCurrency(point.displayValue)),
+      buildTooltipRowHtml('<span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#0d6b62;"></span>', 'Mortgage net worth', formatCurrency(displayMoney(point.mortgageValue, point.yearNumber))),
+      buildTooltipRowHtml('<span style="display:inline-block;width:10px;height:10px;border-radius:999px;background:#b84f2c;"></span>', 'Renter net worth', formatCurrency(displayMoney(point.rentValue, point.yearNumber)))
+    ].join('');
+  }
+
+  function buildChartOption(series, optionConfig) {
+    var years = series[0] ? series[0].values.map(function (point) { return point.yearNumber; }) : [];
+    var config = optionConfig || {};
+    return {
+      animation: false,
+      textStyle: {
+        fontFamily: 'Georgia, "Times New Roman", serif'
+      },
+      color: series.map(function (entry) { return entry.color; }),
+      grid: {
+        left: 18,
+        right: 20,
+        top: 56,
+        bottom: 26,
+        containLabel: true
+      },
+      legend: {
+        top: 10,
+        left: 12,
+        itemWidth: 12,
+        itemHeight: 12,
+        textStyle: {
+          color: '#625749',
+          fontSize: 12
+        }
+      },
+      tooltip: {
+        trigger: 'axis',
+        confine: true,
+        backgroundColor: 'rgba(255, 251, 244, 0.96)',
+        borderColor: 'rgba(29, 26, 22, 0.14)',
+        borderWidth: 1,
+        textStyle: {
+          color: '#1d1a16',
+          fontSize: 13
+        },
+        extraCssText: 'box-shadow: 0 16px 32px rgba(29, 26, 22, 0.12); border-radius: 14px; padding: 12px 14px;',
+        axisPointer: {
+          type: 'cross',
+          label: {
+            show: false
+          },
+          lineStyle: {
+            color: 'rgba(29, 26, 22, 0.28)',
+            width: 1.5
+          },
+          crossStyle: {
+            color: 'rgba(29, 26, 22, 0.28)',
+            width: 1.5
+          }
+        },
+        formatter: config.tooltipFormatter || defaultChartTooltipFormatter
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: years,
+        axisLine: {
+          lineStyle: {
+            color: 'rgba(29, 26, 22, 0.18)'
+          }
+        },
+        axisTick: {
+          show: false
+        },
+        axisLabel: {
+          color: '#625749',
+          fontSize: 11,
+          formatter: function (value) {
+            return 'Year ' + value;
+          }
+        }
+      },
+      yAxis: {
+        type: 'value',
+        scale: true,
+        splitNumber: 4,
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
+        },
+        axisLabel: {
+          color: '#625749',
+          fontSize: 11,
+          formatter: function (value) {
+            return formatCompactCurrency(value);
+          }
+        },
+        splitLine: {
+          lineStyle: {
+            color: 'rgba(29, 26, 22, 0.12)',
+            type: 'dashed'
+          }
+        }
+      },
+      series: series.map(function (entry, index) {
+        var chartSeries = {
+          name: entry.label,
+          type: 'line',
+          smooth: false,
+          symbol: 'circle',
+          showSymbol: false,
+          symbolSize: 7,
+          emphasis: {
+            focus: 'series',
+            scale: true
+          },
+          lineStyle: {
+            width: 3,
+            cap: 'round',
+            join: 'round'
+          },
+          itemStyle: {
+            color: entry.color,
+            borderColor: 'rgba(255,255,255,0.95)',
+            borderWidth: 2
+          },
+          data: entry.values.map(function (point) {
+            return {
+              value: displayMoney(point.value, point.yearNumber),
+              displayValue: displayMoney(point.value, point.yearNumber),
+              rawValue: point.value,
+              yearNumber: point.yearNumber,
+              mortgageValue: point.mortgageValue,
+              rentValue: point.rentValue
+            };
+          })
+        };
+
+        if (config.emphasizeZeroLine && index === 0) {
+          chartSeries.markLine = {
+            silent: true,
+            symbol: ['none', 'none'],
+            label: {
+              show: false
+            },
+            lineStyle: {
+              color: 'rgba(29, 26, 22, 0.26)',
+              width: 1.5,
+              type: 'solid'
+            },
+            data: [{ yAxis: 0 }]
+          };
+        }
+
+        return chartSeries;
+      })
+    };
   }
 
   function metricClass(value) {
@@ -1527,9 +1783,9 @@
             if (metric.key === 'endingInvestments') {
               total = month.endingInvestments;
             } else if (metric.key === 'endingHomeEquity') {
-              total = Math.max(0, month.endingHomeValue - month.endingPrincipal);
+              total = month.endingHomeValue - (month.endingSaleCosts || 0) - month.endingPrincipal;
             } else if (metric.key === 'netWorth') {
-              total = month.endingInvestments + Math.max(0, month.endingHomeValue - month.endingPrincipal);
+              total = month.endingInvestments + (month.endingHomeValue - (month.endingSaleCosts || 0) - month.endingPrincipal);
             }
 
             var cell = document.createElement('div');
@@ -1906,6 +2162,7 @@
     });
     window.addEventListener('resize', function () {
       updateStickyOffsets();
+      resizeCharts();
       renderLedger();
     });
   }
